@@ -13,7 +13,8 @@ class Widget {
     return [xs, ys];
   }
 
-  // helper methods for drawing: start
+  // helper methods for drawing: 
+  //   start (setStyle()) and end (strokeAndFill())
   setStyle(stroke, fill) {
     this.ctx.save();
     this.ctx.beginPath();
@@ -21,7 +22,6 @@ class Widget {
     this.ctx.fillStyle = fill;
   }
 
-  // helper methods for drawing: end
   strokeAndFill() {
     this.ctx.fill();
     this.ctx.stroke();
