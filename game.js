@@ -77,7 +77,23 @@ class Pole extends Widget {
 
   getCandidates() {
     var retvar = [];
-    this.lines.forEach(line => { retvar.push(line.slice(-1)[0]); });
+    this.lines.forEach(line => {
+
+      var flag = false; // if wall(s) can be added, the flag is true
+      var from = this;
+      var to;
+      for (var i = 0; i < line.length; i++) {
+        to = line[i];
+        from.walls.forEach(w => {
+          if ((w.to == to) || (w.from == to)) { flag |= !w.show; }});
+        from = to;
+      }
+      if (flag) {
+        var candidate = line.slice(-1)[0]; // the last pole of the line
+        retvar.push(candidate);
+      }
+    });
+
     return retvar;
   }
 
