@@ -225,7 +225,10 @@ class Poles extends Container {
           // the case that the clicked pole is already clicked
           // or there is no clicked pole
           pole.clickHandler();
-	  this.clickedPole = (this.clickedPole == null) ? pole : null;
+          this.clickedPole = (this.clickedPole == null) ? pole : null;
+          
+          // ログに出力
+          console.log(`Clicked on pole at: (${pole.x}, ${pole.y})`);
         } else { 
           // the case that the clicked pole is one of the candidates
           this.clickedPole.getCandidates().forEach(p => {
@@ -235,6 +238,9 @@ class Poles extends Container {
               this.clickedPole.makeWall(pole);
               this.clickedPole = null;
               success = true;
+
+              // ログに出力
+              console.log(`Made a wall between poles at: (${this.clickedPole.x}, ${this.clickedPole.y}) and (${pole.x}, ${pole.y})`);
             };
           });
         }
@@ -244,6 +250,7 @@ class Poles extends Container {
     return success;
   }
 } 
+
 
 class Walls extends Container {
   addItem(wall) {
