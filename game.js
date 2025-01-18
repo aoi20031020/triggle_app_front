@@ -165,7 +165,7 @@ class Patch extends Widget {
     this.vertexes = [];
     this.show = false;
 
-    this.player = 0;
+    this.player = null;
     this.color = 'forestgreen';
 
     walls.forEach(wall => {
@@ -211,16 +211,17 @@ class Container {
 }
 
 class Poles extends Container {
-  constructor() {
+  constructor(patches) {
     super();
     this.clickedPole = null;
+    this.patches = patches;  // Patchesインスタンスを受け取る
   }
 
   checkEvent(point) {
     var success = false;
 
     this.items.forEach(pole => {
-      if (pole.checkHit(point)) { 
+      if (pole.checkHit(point)) {
         if (this.clickedPole == null || this.clickedPole == pole) {
           // すでにクリックされたポールか、クリックされたポールがない場合
           pole.clickHandler();
@@ -233,7 +234,8 @@ class Poles extends Container {
               this.clickedPole.clickHandler();
               this.clickedPole.makeWall(pole);
               // ポールの座標をログに記録
-              console.log(`Player placed a wall between (${this.clickedPole.x}, ${this.clickedPole.y}) and (${pole.x}, ${pole.y})`);
+              const currentPlayer = this.patches.currentPlayer;  // 現在のプレイヤーを取得
+              this.patches.log(`Player ${currentPlayer + 1} placed a wall between (${this.clickedPole.x}, ${this.clickedPole.y}) and (${pole.x}, ${pole.y})`);
               this.clickedPole = null;
               success = true;
             };
@@ -263,8 +265,7 @@ class Patches extends Container {
     this.numPlayers = players;
     this.currentPlayer = 0;
     this.colors = ['forestgreen', 'tomato', 'navy', 'gold'];
-    this.player = ['Player 1 (green)', 'Player 2 (red)',
-                   'Player 3 (blue)', 'Player 4 (yellow)'];
+    this.player = ['Player 1 (green)', 'Player 2 (red)', 'Player 3 (blue)', 'Player 4 (yellow)'];
 
     this.logs = []; // ログを保持する配列
   }
@@ -287,10 +288,23 @@ class Patches extends Container {
       patch.walls.some(wall => { if (!wall.show) { flag = false; }}); // まだ壁が表示されていない場合
       if (flag) {
         patch.setPlayer(cp, pColor);
-        this.log(`${this.player[cp]}.`); // 座標もログに記録
       }
     });
-
+    const points = [];
+    for (var i = 0; i < this.numPlayers; i++) { points.push(0); }
+    this.items.forEach(patch => {
+      points[patch.player]++;
+    });
+    var str = '';
+    for (var i = 0; i < this.numPlayers; i++) {
+      str += this.player[i] + ' got ' + points[i] + ' points.<br />';
+    }
+    this.area.html(str);
+        let Scores = `Scores:\n`;
+    for (let i = 0; i < this.numPlayers; i++) {
+      Scores += `${this.player[i]}: ${points[i]} points\n`;
+    }
+    this.log(Scores); // ログ追加
     this.currentPlayer = (this.currentPlayer + 1) % this.numPlayers;
     this.showMessage();
 
@@ -476,8 +490,12 @@ $(function() {
   // create board
   (new Board(cs)).draw();
 
+  // fix: 継承関係ごちゃついてる
+  // create patches
+  const patches = new Patches($('#msgarea'), num);
+
   //create poles
-  const poles = new Poles();
+  const poles = new Poles(patches);
   positions.forEach(pos => {
     poles.addItem(new Pole(cs, pos[0], pos[1]));
   });
@@ -490,9 +508,8 @@ $(function() {
   });
 
   // create patches
-  const patches = new Patches($('#msgarea'), num);
   triangles.forEach(triangle => {
-    patches.addItem(new Patch(cs, 
+    patches.addItem(new Patch(cs,
       triangle.map(idx => { return walls.getItem(idx); })));
   });
 
