@@ -222,34 +222,29 @@ class Poles extends Container {
     this.items.forEach(pole => {
       if (pole.checkHit(point)) { 
         if (this.clickedPole == null || this.clickedPole == pole) {
-          // the case that the clicked pole is already clicked
-          // or there is no clicked pole
+          // すでにクリックされたポールか、クリックされたポールがない場合
           pole.clickHandler();
           this.clickedPole = (this.clickedPole == null) ? pole : null;
-          
-          // ログに出力
-          console.log(`Clicked on pole at: (${pole.x}, ${pole.y})`);
-        } else { 
-          // the case that the clicked pole is one of the candidates
+        } else {
+          // クリックされたポールが候補の一部である場合
           this.clickedPole.getCandidates().forEach(p => {
             if (p == pole) {
-              // the case that the candidate pole is clicked
+              // 候補のポールがクリックされた場合
               this.clickedPole.clickHandler();
               this.clickedPole.makeWall(pole);
+              // ポールの座標をログに記録
+              console.log(`Player placed a wall between (${this.clickedPole.x}, ${this.clickedPole.y}) and (${pole.x}, ${pole.y})`);
               this.clickedPole = null;
               success = true;
-
-              // ログに出力
-              console.log(`Made a wall between poles at: (${this.clickedPole.x}, ${this.clickedPole.y}) and (${pole.x}, ${pole.y})`);
             };
           });
         }
       }
     });
-    // return true only if the wall is constructed
+    // 壁が構築された場合のみ true を返す
     return success;
   }
-} 
+}
 
 
 class Walls extends Container {
@@ -267,20 +262,35 @@ class Patches extends Container {
 
     this.numPlayers = players;
     this.currentPlayer = 0;
-    this.colors = [ 'forestgreen', 'tomato', 'navy', 'gold' ];
-    this.player = [ 'Player 1 (green)', 'Player 2 (red)', 
-                    'Player 3 (blue)', 'Player 4 (yellow)' ];
+    this.colors = ['forestgreen', 'tomato', 'navy', 'gold'];
+    this.player = ['Player 1 (green)', 'Player 2 (red)',
+                   'Player 3 (blue)', 'Player 4 (yellow)'];
+
+    this.logs = []; // ログを保持する配列
+  }
+
+  // ログを記録するメソッド
+  log(message) {
+    const timestamp = new Date().toISOString();
+    const logMessage = `[${timestamp}] ${message}`;
+    this.logs.push(logMessage);
+    console.log(logMessage); // コンソールにも出力
   }
 
   update() {
     const cp = this.currentPlayer;
     const pColor = this.colors[cp];
+
     this.items.forEach(patch => {
       if (patch.show) { return; }
       var flag = true;
-      patch.walls.some(wall => { if (!wall.show) { flag = false; }});
-      if (flag) { patch.setPlayer(cp, pColor); }
+      patch.walls.some(wall => { if (!wall.show) { flag = false; }}); // まだ壁が表示されていない場合
+      if (flag) {
+        patch.setPlayer(cp, pColor);
+        this.log(`${this.player[cp]}.`); // 座標もログに記録
+      }
     });
+
     this.currentPlayer = (this.currentPlayer + 1) % this.numPlayers;
     this.showMessage();
 
@@ -288,12 +298,17 @@ class Patches extends Container {
     for (var i = 0; i < this.items.length; i++) {
       if (this.items[i].show == false) { flag = false; }
     }
-    // the case that the game is finished
-    if (flag) { this.showFinalMessage(); }
+    // ゲームが終了した場合
+    if (flag) {
+      this.showFinalMessage();
+      this.log('The game is finished.'); // ログ追加
+    }
   }
 
   showMessage() {
-    this.area.text(this.player[this.currentPlayer] + "'s turn.");
+    const message = this.player[this.currentPlayer] + "'s turn.";
+    this.area.text(message);
+    this.log(message); // ログ追加
   }
 
   showFinalMessage() {
@@ -305,6 +320,13 @@ class Patches extends Container {
       str += this.player[i] + ' got ' + points[i] + ' points.<br />';
     }
     this.area.html(str);
+
+    // 最終得点をログに追加
+    let finalScores = `Final Scores:\n`;
+    for (let i = 0; i < this.numPlayers; i++) {
+      finalScores += `${this.player[i]}: ${points[i]} points\n`;
+    }
+    this.log(finalScores); // ログ追加
   }
 }
 
@@ -314,7 +336,7 @@ const positions = [
   [-0.1666666666666667,  0.8660254037844387],
   [ 0.1666666666666667,  0.8660254037844387],
   [ 0.5,                 0.8660254037844387],
- 
+
   [-0.6666666666666667,  0.5773502691896257],
   [-0.3333333333333333,  0.5773502691896257],
   [ 0.0,                 0.5773502691896257],
