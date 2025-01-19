@@ -1,27 +1,47 @@
 class Result {
   constructor() {
     // 棋譜の初期化
-    // type: [{playerNumber: number, clickPole: [number, number], clickedPole: [number, number]}]
+    // type Game_record: [{
+    //   player_number: number,
+    //   click_pole: [float, float],
+    //   clicked_pole: [float, float],
+    //   player1: number,
+    //   player2: number,
+    //   player3: number,
+    //   player4: number,
+    // }]
     this.gameRecord = [];
-    // スコア履歴の初期化
-    // type: [{player1: number, player2: number, player3: number, player4: number}]
-    this.scoreRecord = [];
+    // ゲーム結果
+    // type Result: {
+    //   timestamp: string,
+    //   player_number: number,
+    //   final_scores: [number, number, number, number],
+    //   game_record: GameRecord[],
+    this.result = {};
     this.logs = []; // ログを保持する配列
   }
 
   // 棋譜を追加するメソッド
   addGameRecord(record) {
     this.gameRecord.push(record);
-
+    console.dir(this.gameRecord); // ログに追加
     // ログのフォーマット修正
-    const logMessage = `Player ${record.playerNumber} placed a wall between (${record.clickedPole[0]}, ${record.clickedPole[1]}) and (${record.clickPole[0]}, ${record.clickPole[1]})`;
-    this.addLog(logMessage);
+    const recordMessage = `\nGameRecord: \nplayerNumber: ${record.player_number}, \n clickPole: [${record.clicked_pole[0]}, ${record.clicked_pole[1]}], \n clickedPole: [${record.click_pole[0]}, ${record.click_pole[1]}], \n Player 1: ${record.player1} points, \n Player 2: ${record.player2} points, \n Player 3: ${record.player3} points, \n Player 4: ${record.player4} points,`;
+    this.addLog(recordMessage); // ログに追加
   }
 
-  // スコアを追加するメソッド
-  addScore(score) {
-    this.scoreRecord.push(score);
-    this.addLog(`Score updated: Player 1: ${score.player1}, Player 2: ${score.player2}, Player 3: ${score.player3}, Player 4: ${score.player4}`);
+  // ゲーム結果を追加するメソッド
+  addResult(playerNumber, finalScores) {
+    this.result = {
+      game_result:{
+        timestamp: new Date().toISOString(),
+        player_number: playerNumber,
+        final_scores: finalScores,
+        game_record: this.gameRecord,
+      }
+    };
+    const resultMessage = `\nResult: \nplayerNumber: ${playerNumber}, \n finalScores: [${finalScores[0]}, ${finalScores[1]}, ${finalScores[2]}, ${finalScores[3]}]`;
+    this.addLog(resultMessage); // ログに追加
   }
 
   // ログを記録するメソッド
@@ -37,21 +57,85 @@ class Result {
     return this.gameRecord;
   }
 
-  // スコアを取得するメソッド
-  getScore() {
-    return this.scoreRecord;
-  }
-
   // 棋譜とスコアを取得するメソッド
   getResult() {
-    return {
-      gameRecord: this.gameRecord,
-      scoreRecord: this.scoreRecord,
-    };
+    return this.result
   }
 
   getLogs() {
     return this.logs;
+  }
+
+  submit() {
+    // const bodymock = JSON.stringify(
+    //   {
+    //     "game_result": {
+    //       "timestamp": "2025-01-18T12:34:56.789Z",
+    //       "player_number": 4,
+    //       "final_scores": [
+    //         20,
+    //         15,
+    //         10,
+    //         30
+    //       ],
+    //       "game_record": [
+    //         {
+    //           "player_number": 1,
+    //           "click_pole": [
+    //             2.5,
+    //             3.7
+    //           ],
+    //           "clicked_pole": [
+    //             4.2,
+    //             5.1
+    //           ],
+    //           "player1": 10,
+    //           "player2": 0,
+    //           "player3": 0,
+    //           "player4": 0
+    //         },
+    //         {
+    //           "player_number": 2,
+    //           "click_pole": [
+    //             5.6,
+    //             6.8
+    //           ],
+    //           "clicked_pole": [
+    //             7.3,
+    //             8.4
+    //           ],
+    //           "player1": 10,
+    //           "player2": 5,
+    //           "player3": 0,
+    //           "player4": 0
+    //         }
+    //       ]
+    //     }
+    //   }
+    // ); // 送信するデータをJSON文字列に変換
+
+    // サーバーに送信する処理を書く
+    const body = JSON.stringify(this.getResult()); // 送信するデータをJSON文字列に変換
+    const headers = {
+      'Content-Type': 'application/json', // ヘッダーの指定（Content-Typeをjsonに設定）
+    };
+
+    // fetchを使用してPOSTリクエストを送信
+    fetch('http://localhost:3000/api/result', {
+      method: 'POST',  // POSTメソッド
+      headers: headers,
+      body: body,  // 送信するデータ
+    })
+    .then(response => response.json())  // レスポンスをJSONとして処理
+    .then(data => {
+      console.log('Success:', data);  // 成功した場合
+    })
+    .catch(error => {
+      console.error('Error:', error);  // エラーが発生した場合
+    });
+
+    console.log(body);  // 送信するデータをコンソールに表示
+    console.dir(body);  // 詳細に表示
   }
 }
 
@@ -157,12 +241,12 @@ class Pole extends Widget {
   clickHandler() {
     var candidates = this.getCandidates();
     if (this.clicked) {
-      candidates.forEach(candidate => { 
-        candidate.status.shift(); 
+      candidates.forEach(candidate => {
+        candidate.status.shift();
       });
     } else {
-      candidates.forEach(candidate => { 
-        candidate.status.unshift('candidate'); 
+      candidates.forEach(candidate => {
+        candidate.status.unshift('candidate');
       });
     }
     this.clicked = !this.clicked;
@@ -205,7 +289,7 @@ class Wall extends Widget {
   draw() {
     const stroke = 'azure';
     const fill = 'azure';
-    if (this.show) { 
+    if (this.show) {
       this.setStyle(stroke, fill);
       this.ctx.lineWidth = 10;
       this.ctx.moveTo(this.from.x, this.from.y);
@@ -240,7 +324,7 @@ class Patch extends Widget {
   draw() {
     const stroke = this.color;
     const fill = this.color;
-    if (this.show) { 
+    if (this.show) {
       this.setStyle(stroke, fill);
       this.vertexes.forEach(vertex => {
         this.ctx.lineTo(vertex.x, vertex.y);
@@ -268,11 +352,11 @@ class Container {
 }
 
 class Poles extends Container {
-  constructor(patches, result) {
+  constructor(result) {
     super();
     this.clickedPole = null;
-    this.patches = patches;  // Patchesインスタンスを受け取る
     this.result = result;    // Resultインスタンスを受け取る
+    this.lastClicked = null;
   }
 
   checkEvent(point) {
@@ -291,15 +375,11 @@ class Poles extends Container {
               // 候補のポールがクリックされた場合
               this.clickedPole.clickHandler();
               this.clickedPole.makeWall(pole);
-              // ポールの座標をログに記録
-              const currentPlayer = this.patches.currentPlayer;  // 現在のプレイヤーを取得
-              // 棋譜を追加
-              this.result.addGameRecord({
-                playerNumber: currentPlayer + 1,  // プレイヤー番号
+              // クリックされたポールの座標を取得
+              this.lastClicked = {
                 clickPole: [pole.x, pole.y],  // クリックされたポールの座標
                 clickedPole: [this.clickedPole.x, this.clickedPole.y],  // クリックされたポールの座標
-              });
-
+              };
               this.clickedPole = null;
               success = true;
             };
@@ -310,6 +390,9 @@ class Poles extends Container {
     // 壁が構築された場合のみ true を返す
     return success;
   }
+  getPoles() {
+    return this.lastClicked;
+  };
 }
 
 
@@ -322,7 +405,7 @@ class Walls extends Container {
 }
 
 class Patches extends Container {
-  constructor(area, players, result) {
+  constructor(area, players, result, poles) {
     super();
     this.area = area;
     this.numPlayers = players;
@@ -330,11 +413,13 @@ class Patches extends Container {
     this.colors = ['forestgreen', 'tomato', 'navy', 'gold'];
     this.player = ['Player 1 (green)', 'Player 2 (red)', 'Player 3 (blue)', 'Player 4 (yellow)'];
     this.result = result;  // Resultインスタンスを受け取る
+    this.poles = poles;
   }
 
   update() {
     const cp = this.currentPlayer;
     const pColor = this.colors[cp];
+    const lastClicked = this.poles.getPoles();
 
     this.items.forEach(patch => {
       if (patch.show) { return; }
@@ -350,14 +435,16 @@ class Patches extends Container {
     this.items.forEach(patch => {
       points[patch.player]++;
     });
-    // スコアを追加
-    this.result.addScore({
+    // 棋譜を追加
+    this.result.addGameRecord({
+      player_number: this.currentPlayer + 1,
+      click_pole: lastClicked.clickPole,
+      clicked_pole: lastClicked.clickedPole,
       player1: points[0],
       player2: points[1],
       player3: points[2],
       player4: points[3],
     });
-
     this.currentPlayer = (this.currentPlayer + 1) % this.numPlayers;
     this.showMessage();
 
@@ -387,14 +474,13 @@ class Patches extends Container {
       str += this.player[i] + ' got ' + points[i] + ' points.<br />';
     }
     this.area.html(str);
-
     // 最終得点をログに追加
     let finalScores = `Final Scores:\n`;
     for (let i = 0; i < this.numPlayers; i++) {
       finalScores += `${this.player[i]}: ${points[i]} points\n`;
     }
-    this.result.addLog(finalScores); // ログ追加
-    const resultAll = this.result.getResult(); // 棋譜とスコアを取得
+    this.result.addResult(this.numPlayers, points); // ゲーム結果を追加
+    this.result.submit(); // サーバーに送信
   }
 }
 
@@ -547,12 +633,8 @@ $(function() {
   // create board
   (new Board(cs)).draw();
 
-  // fix: 継承関係ごちゃついてる
-  // create patches
-  const patches = new Patches($('#msgarea'), num, result);
-
   //create poles
-  const poles = new Poles(patches, result);
+  const poles = new Poles(result);
   positions.forEach(pos => {
     poles.addItem(new Pole(cs, pos[0], pos[1]));
   });
@@ -565,6 +647,8 @@ $(function() {
   });
 
   // create patches
+  // fix: 継承関係ごちゃついてる
+  const patches = new Patches($('#msgarea'), num, result, poles);
   triangles.forEach(triangle => {
     patches.addItem(new Patch(cs,
       triangle.map(idx => { return walls.getItem(idx); })));
