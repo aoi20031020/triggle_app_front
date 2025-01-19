@@ -24,7 +24,6 @@ class Result {
   // 棋譜を追加するメソッド
   addGameRecord(record) {
     this.gameRecord.push(record);
-    console.dir(this.gameRecord); // ログに追加
     // ログのフォーマット修正
     const recordMessage = `\nGameRecord: \nplayerNumber: ${record.player_number}, \n clickPole: [${record.clicked_pole[0]}, ${record.clicked_pole[1]}], \n clickedPole: [${record.click_pole[0]}, ${record.click_pole[1]}], \n Player 1: ${record.player1} points, \n Player 2: ${record.player2} points, \n Player 3: ${record.player3} points, \n Player 4: ${record.player4} points,`;
     this.addLog(recordMessage); // ログに追加
