@@ -1,3 +1,60 @@
+class Result {
+  constructor() {
+    // 棋譜の初期化
+    // type: [{playerNumber: number, clickPole: [number, number], clickedPole: [number, number]}]
+    this.gameRecord = [];
+    // スコア履歴の初期化
+    // type: [{player1: number, player2: number, player3: number, player4: number}]
+    this.scoreRecord = [];
+    this.logs = []; // ログを保持する配列
+  }
+
+  // 棋譜を追加するメソッド
+  addGameRecord(record) {
+    this.gameRecord.push(record);
+
+    // ログのフォーマット修正
+    const logMessage = `Player ${record.playerNumber} placed a wall between (${record.clickedPole[0]}, ${record.clickedPole[1]}) and (${record.clickPole[0]}, ${record.clickPole[1]})`;
+    this.addLog(logMessage);
+  }
+
+  // スコアを追加するメソッド
+  addScore(score) {
+    this.scoreRecord.push(score);
+    this.addLog(`Score updated: Player 1: ${score.player1}, Player 2: ${score.player2}, Player 3: ${score.player3}, Player 4: ${score.player4}`);
+  }
+
+  // ログを記録するメソッド
+  addLog(message) {
+    const timestamp = new Date().toISOString();
+    const logMessage = `[${timestamp}] ${message}`;
+    this.logs.push(logMessage);
+    console.log(logMessage); // コンソールにも出力
+  }
+
+  // 棋譜を取得するメソッド
+  getRecord() {
+    return this.gameRecord;
+  }
+
+  // スコアを取得するメソッド
+  getScore() {
+    return this.scoreRecord;
+  }
+
+  // 棋譜とスコアを取得するメソッド
+  getResult() {
+    return {
+      gameRecord: this.gameRecord,
+      scoreRecord: this.scoreRecord,
+    };
+  }
+
+  getLogs() {
+    return this.logs;
+  }
+}
+
 class Widget {
   constructor(cs) {
     this.ctx = cs.getContext('2d');
@@ -13,7 +70,7 @@ class Widget {
     return [xs, ys];
   }
 
-  // helper methods for drawing: 
+  // helper methods for drawing:
   //   start (setStyle()) and end (strokeAndFill())
   setStyle(stroke, fill) {
     this.ctx.save();
@@ -211,10 +268,11 @@ class Container {
 }
 
 class Poles extends Container {
-  constructor(patches) {
+  constructor(patches, result) {
     super();
     this.clickedPole = null;
     this.patches = patches;  // Patchesインスタンスを受け取る
+    this.result = result;    // Resultインスタンスを受け取る
   }
 
   checkEvent(point) {
@@ -235,7 +293,13 @@ class Poles extends Container {
               this.clickedPole.makeWall(pole);
               // ポールの座標をログに記録
               const currentPlayer = this.patches.currentPlayer;  // 現在のプレイヤーを取得
-              this.patches.log(`Player ${currentPlayer + 1} placed a wall between (${this.clickedPole.x}, ${this.clickedPole.y}) and (${pole.x}, ${pole.y})`);
+              // 棋譜を追加
+              this.result.addGameRecord({
+                playerNumber: currentPlayer + 1,  // プレイヤー番号
+                clickPole: [pole.x, pole.y],  // クリックされたポールの座標
+                clickedPole: [this.clickedPole.x, this.clickedPole.y],  // クリックされたポールの座標
+              });
+
               this.clickedPole = null;
               success = true;
             };
@@ -258,24 +322,14 @@ class Walls extends Container {
 }
 
 class Patches extends Container {
-  constructor(area, players) {
+  constructor(area, players, result) {
     super();
     this.area = area;
-
     this.numPlayers = players;
     this.currentPlayer = 0;
     this.colors = ['forestgreen', 'tomato', 'navy', 'gold'];
     this.player = ['Player 1 (green)', 'Player 2 (red)', 'Player 3 (blue)', 'Player 4 (yellow)'];
-
-    this.logs = []; // ログを保持する配列
-  }
-
-  // ログを記録するメソッド
-  log(message) {
-    const timestamp = new Date().toISOString();
-    const logMessage = `[${timestamp}] ${message}`;
-    this.logs.push(logMessage);
-    console.log(logMessage); // コンソールにも出力
+    this.result = result;  // Resultインスタンスを受け取る
   }
 
   update() {
@@ -290,21 +344,20 @@ class Patches extends Container {
         patch.setPlayer(cp, pColor);
       }
     });
+
     const points = [];
     for (var i = 0; i < this.numPlayers; i++) { points.push(0); }
     this.items.forEach(patch => {
       points[patch.player]++;
     });
-    var str = '';
-    for (var i = 0; i < this.numPlayers; i++) {
-      str += this.player[i] + ' got ' + points[i] + ' points.<br />';
-    }
-    this.area.html(str);
-        let Scores = `Scores:\n`;
-    for (let i = 0; i < this.numPlayers; i++) {
-      Scores += `${this.player[i]}: ${points[i]} points\n`;
-    }
-    this.log(Scores); // ログ追加
+    // スコアを追加
+    this.result.addScore({
+      player1: points[0],
+      player2: points[1],
+      player3: points[2],
+      player4: points[3],
+    });
+
     this.currentPlayer = (this.currentPlayer + 1) % this.numPlayers;
     this.showMessage();
 
@@ -315,14 +368,14 @@ class Patches extends Container {
     // ゲームが終了した場合
     if (flag) {
       this.showFinalMessage();
-      this.log('The game is finished.'); // ログ追加
+      this.result.addLog('The game is finished.'); // ログ追加
     }
   }
 
   showMessage() {
     const message = this.player[this.currentPlayer] + "'s turn.";
     this.area.text(message);
-    this.log(message); // ログ追加
+    this.result.addLog(message); // ログ追加
   }
 
   showFinalMessage() {
@@ -340,7 +393,8 @@ class Patches extends Container {
     for (let i = 0; i < this.numPlayers; i++) {
       finalScores += `${this.player[i]}: ${points[i]} points\n`;
     }
-    this.log(finalScores); // ログ追加
+    this.result.addLog(finalScores); // ログ追加
+    const resultAll = this.result.getResult(); // 棋譜とスコアを取得
   }
 }
 
@@ -487,15 +541,18 @@ $(function() {
   // prepare for the graphics context
   const cs = $('#canvas').get(0);
 
+  // prepare for the result
+  const result = new Result();
+
   // create board
   (new Board(cs)).draw();
 
   // fix: 継承関係ごちゃついてる
   // create patches
-  const patches = new Patches($('#msgarea'), num);
+  const patches = new Patches($('#msgarea'), num, result);
 
   //create poles
-  const poles = new Poles(patches);
+  const poles = new Poles(patches, result);
   positions.forEach(pos => {
     poles.addItem(new Pole(cs, pos[0], pos[1]));
   });
