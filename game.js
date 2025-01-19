@@ -1,3 +1,144 @@
+class Result {
+  constructor() {
+    // 棋譜の初期化
+    // type Game_record: [{
+    //   player_number: number,
+    //   click_pole: [float, float],
+    //   clicked_pole: [float, float],
+    //   player1: number,
+    //   player2: number,
+    //   player3: number,
+    //   player4: number,
+    // }]
+    this.gameRecord = [];
+    // ゲーム結果
+    // type Result: {
+    //   timestamp: string,
+    //   player_number: number,
+    //   final_scores: [number, number, number, number],
+    //   game_record: GameRecord[],
+    this.result = {};
+    this.logs = []; // ログを保持する配列
+  }
+
+  // 棋譜を追加するメソッド
+  addGameRecord(record) {
+    this.gameRecord.push(record);
+    console.dir(this.gameRecord); // ログに追加
+    // ログのフォーマット修正
+    const recordMessage = `\nGameRecord: \nplayerNumber: ${record.player_number}, \n clickPole: [${record.clicked_pole[0]}, ${record.clicked_pole[1]}], \n clickedPole: [${record.click_pole[0]}, ${record.click_pole[1]}], \n Player 1: ${record.player1} points, \n Player 2: ${record.player2} points, \n Player 3: ${record.player3} points, \n Player 4: ${record.player4} points,`;
+    this.addLog(recordMessage); // ログに追加
+  }
+
+  // ゲーム結果を追加するメソッド
+  addResult(playerNumber, finalScores) {
+    this.result = {
+      game_result:{
+        timestamp: new Date().toISOString(),
+        player_number: playerNumber,
+        final_scores: finalScores,
+        game_record: this.gameRecord,
+      }
+    };
+    const resultMessage = `\nResult: \nplayerNumber: ${playerNumber}, \n finalScores: [${finalScores[0]}, ${finalScores[1]}, ${finalScores[2]}, ${finalScores[3]}]`;
+    this.addLog(resultMessage); // ログに追加
+  }
+
+  // ログを記録するメソッド
+  addLog(message) {
+    const timestamp = new Date().toISOString();
+    const logMessage = `[${timestamp}] ${message}`;
+    this.logs.push(logMessage);
+    console.log(logMessage); // コンソールにも出力
+  }
+
+  // 棋譜を取得するメソッド
+  getRecord() {
+    return this.gameRecord;
+  }
+
+  // 棋譜とスコアを取得するメソッド
+  getResult() {
+    return this.result
+  }
+
+  getLogs() {
+    return this.logs;
+  }
+
+  submit() {
+    // const bodymock = JSON.stringify(
+    //   {
+    //     "game_result": {
+    //       "timestamp": "2025-01-18T12:34:56.789Z",
+    //       "player_number": 4,
+    //       "final_scores": [
+    //         20,
+    //         15,
+    //         10,
+    //         30
+    //       ],
+    //       "game_record": [
+    //         {
+    //           "player_number": 1,
+    //           "click_pole": [
+    //             2.5,
+    //             3.7
+    //           ],
+    //           "clicked_pole": [
+    //             4.2,
+    //             5.1
+    //           ],
+    //           "player1": 10,
+    //           "player2": 0,
+    //           "player3": 0,
+    //           "player4": 0
+    //         },
+    //         {
+    //           "player_number": 2,
+    //           "click_pole": [
+    //             5.6,
+    //             6.8
+    //           ],
+    //           "clicked_pole": [
+    //             7.3,
+    //             8.4
+    //           ],
+    //           "player1": 10,
+    //           "player2": 5,
+    //           "player3": 0,
+    //           "player4": 0
+    //         }
+    //       ]
+    //     }
+    //   }
+    // ); // 送信するデータをJSON文字列に変換
+
+    // サーバーに送信する処理を書く
+    const body = JSON.stringify(this.getResult()); // 送信するデータをJSON文字列に変換
+    const headers = {
+      'Content-Type': 'application/json', // ヘッダーの指定（Content-Typeをjsonに設定）
+    };
+
+    // fetchを使用してPOSTリクエストを送信
+    fetch('http://localhost:3000/api/result', {
+      method: 'POST',  // POSTメソッド
+      headers: headers,
+      body: body,  // 送信するデータ
+    })
+    .then(response => response.json())  // レスポンスをJSONとして処理
+    .then(data => {
+      console.log('Success:', data);  // 成功した場合
+    })
+    .catch(error => {
+      console.error('Error:', error);  // エラーが発生した場合
+    });
+
+    console.log(body);  // 送信するデータをコンソールに表示
+    console.dir(body);  // 詳細に表示
+  }
+}
+
 class Widget {
   constructor(cs) {
     this.ctx = cs.getContext('2d');
@@ -13,7 +154,7 @@ class Widget {
     return [xs, ys];
   }
 
-  // helper methods for drawing: 
+  // helper methods for drawing:
   //   start (setStyle()) and end (strokeAndFill())
   setStyle(stroke, fill) {
     this.ctx.save();
@@ -100,12 +241,12 @@ class Pole extends Widget {
   clickHandler() {
     var candidates = this.getCandidates();
     if (this.clicked) {
-      candidates.forEach(candidate => { 
-        candidate.status.shift(); 
+      candidates.forEach(candidate => {
+        candidate.status.shift();
       });
     } else {
-      candidates.forEach(candidate => { 
-        candidate.status.unshift('candidate'); 
+      candidates.forEach(candidate => {
+        candidate.status.unshift('candidate');
       });
     }
     this.clicked = !this.clicked;
@@ -148,7 +289,7 @@ class Wall extends Widget {
   draw() {
     const stroke = 'azure';
     const fill = 'azure';
-    if (this.show) { 
+    if (this.show) {
       this.setStyle(stroke, fill);
       this.ctx.lineWidth = 10;
       this.ctx.moveTo(this.from.x, this.from.y);
@@ -165,7 +306,7 @@ class Patch extends Widget {
     this.vertexes = [];
     this.show = false;
 
-    this.player = 0;
+    this.player = null;
     this.color = 'forestgreen';
 
     walls.forEach(wall => {
@@ -183,7 +324,7 @@ class Patch extends Widget {
   draw() {
     const stroke = this.color;
     const fill = this.color;
-    if (this.show) { 
+    if (this.show) {
       this.setStyle(stroke, fill);
       this.vertexes.forEach(vertex => {
         this.ctx.lineTo(vertex.x, vertex.y);
@@ -211,45 +352,48 @@ class Container {
 }
 
 class Poles extends Container {
-  constructor() {
+  constructor(result) {
     super();
     this.clickedPole = null;
+    this.result = result;    // Resultインスタンスを受け取る
+    this.lastClicked = null;
   }
 
   checkEvent(point) {
     var success = false;
 
     this.items.forEach(pole => {
-      if (pole.checkHit(point)) { 
+      if (pole.checkHit(point)) {
         if (this.clickedPole == null || this.clickedPole == pole) {
-          // the case that the clicked pole is already clicked
-          // or there is no clicked pole
+          // すでにクリックされたポールか、クリックされたポールがない場合
           pole.clickHandler();
           this.clickedPole = (this.clickedPole == null) ? pole : null;
-          
-          // ログに出力
-          console.log(`Clicked on pole at: (${pole.x}, ${pole.y})`);
-        } else { 
-          // the case that the clicked pole is one of the candidates
+        } else {
+          // クリックされたポールが候補の一部である場合
           this.clickedPole.getCandidates().forEach(p => {
             if (p == pole) {
-              // the case that the candidate pole is clicked
+              // 候補のポールがクリックされた場合
               this.clickedPole.clickHandler();
               this.clickedPole.makeWall(pole);
+              // クリックされたポールの座標を取得
+              this.lastClicked = {
+                clickPole: [pole.x, pole.y],  // クリックされたポールの座標
+                clickedPole: [this.clickedPole.x, this.clickedPole.y],  // クリックされたポールの座標
+              };
               this.clickedPole = null;
               success = true;
-
-              // ログに出力
-              console.log(`Made a wall between poles at: (${this.clickedPole.x}, ${this.clickedPole.y}) and (${pole.x}, ${pole.y})`);
             };
           });
         }
       }
     });
-    // return true only if the wall is constructed
+    // 壁が構築された場合のみ true を返す
     return success;
   }
-} 
+  getPoles() {
+    return this.lastClicked;
+  };
+}
 
 
 class Walls extends Container {
@@ -261,25 +405,45 @@ class Walls extends Container {
 }
 
 class Patches extends Container {
-  constructor(area, players) {
+  constructor(area, players, result, poles) {
     super();
     this.area = area;
-
     this.numPlayers = players;
     this.currentPlayer = 0;
-    this.colors = [ 'forestgreen', 'tomato', 'navy', 'gold' ];
-    this.player = [ 'Player 1 (green)', 'Player 2 (red)', 
-                    'Player 3 (blue)', 'Player 4 (yellow)' ];
+    this.colors = ['forestgreen', 'tomato', 'navy', 'gold'];
+    this.player = ['Player 1 (green)', 'Player 2 (red)', 'Player 3 (blue)', 'Player 4 (yellow)'];
+    this.result = result;  // Resultインスタンスを受け取る
+    this.poles = poles;
   }
 
   update() {
     const cp = this.currentPlayer;
     const pColor = this.colors[cp];
+    const lastClicked = this.poles.getPoles();
+
     this.items.forEach(patch => {
       if (patch.show) { return; }
       var flag = true;
-      patch.walls.some(wall => { if (!wall.show) { flag = false; }});
-      if (flag) { patch.setPlayer(cp, pColor); }
+      patch.walls.some(wall => { if (!wall.show) { flag = false; }}); // まだ壁が表示されていない場合
+      if (flag) {
+        patch.setPlayer(cp, pColor);
+      }
+    });
+
+    const points = [];
+    for (var i = 0; i < this.numPlayers; i++) { points.push(0); }
+    this.items.forEach(patch => {
+      points[patch.player]++;
+    });
+    // 棋譜を追加
+    this.result.addGameRecord({
+      player_number: this.currentPlayer + 1,
+      click_pole: lastClicked.clickPole,
+      clicked_pole: lastClicked.clickedPole,
+      player1: points[0],
+      player2: points[1],
+      player3: points[2],
+      player4: points[3],
     });
     this.currentPlayer = (this.currentPlayer + 1) % this.numPlayers;
     this.showMessage();
@@ -288,12 +452,17 @@ class Patches extends Container {
     for (var i = 0; i < this.items.length; i++) {
       if (this.items[i].show == false) { flag = false; }
     }
-    // the case that the game is finished
-    if (flag) { this.showFinalMessage(); }
+    // ゲームが終了した場合
+    if (flag) {
+      this.showFinalMessage();
+      this.result.addLog('The game is finished.'); // ログ追加
+    }
   }
 
   showMessage() {
-    this.area.text(this.player[this.currentPlayer] + "'s turn.");
+    const message = this.player[this.currentPlayer] + "'s turn.";
+    this.area.text(message);
+    this.result.addLog(message); // ログ追加
   }
 
   showFinalMessage() {
@@ -305,6 +474,13 @@ class Patches extends Container {
       str += this.player[i] + ' got ' + points[i] + ' points.<br />';
     }
     this.area.html(str);
+    // 最終得点をログに追加
+    let finalScores = `Final Scores:\n`;
+    for (let i = 0; i < this.numPlayers; i++) {
+      finalScores += `${this.player[i]}: ${points[i]} points\n`;
+    }
+    this.result.addResult(this.numPlayers, points); // ゲーム結果を追加
+    this.result.submit(); // サーバーに送信
   }
 }
 
@@ -314,7 +490,7 @@ const positions = [
   [-0.1666666666666667,  0.8660254037844387],
   [ 0.1666666666666667,  0.8660254037844387],
   [ 0.5,                 0.8660254037844387],
- 
+
   [-0.6666666666666667,  0.5773502691896257],
   [-0.3333333333333333,  0.5773502691896257],
   [ 0.0,                 0.5773502691896257],
@@ -451,11 +627,14 @@ $(function() {
   // prepare for the graphics context
   const cs = $('#canvas').get(0);
 
+  // prepare for the result
+  const result = new Result();
+
   // create board
   (new Board(cs)).draw();
 
   //create poles
-  const poles = new Poles();
+  const poles = new Poles(result);
   positions.forEach(pos => {
     poles.addItem(new Pole(cs, pos[0], pos[1]));
   });
@@ -468,9 +647,10 @@ $(function() {
   });
 
   // create patches
-  const patches = new Patches($('#msgarea'), num);
+  // fix: 継承関係ごちゃついてる
+  const patches = new Patches($('#msgarea'), num, result, poles);
   triangles.forEach(triangle => {
-    patches.addItem(new Patch(cs, 
+    patches.addItem(new Patch(cs,
       triangle.map(idx => { return walls.getItem(idx); })));
   });
 
